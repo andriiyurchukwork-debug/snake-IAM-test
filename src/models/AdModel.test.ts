@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AD_HEIGHT, AD_TAG_URL, AD_WIDTH } from '../config/adConfig';
 import { AdModel, AdPhase, type ImaSdk } from './AdModel';
 
@@ -70,6 +70,7 @@ describe('AdModel', () => {
   let onError: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     loaders = [];
     manager = new MockManager();
     ima = {
@@ -105,6 +106,10 @@ describe('AdModel', () => {
     onError = vi.fn();
     model.onComplete = onComplete;
     model.onError = onError;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('initializes IMA once and requests the configured HD VAST slot', () => {
@@ -265,6 +270,66 @@ describe('AdModel', () => {
       expect(model.phase).toBe(AdPhase.Complete);
     },
   );
+
+  it('fails open after the per-ad watchdog expires', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    model.requestAd();
+
+    vi.advanceTimersByTime(10_000);
+
+    expect(consoleError).toHaveBeenCalledWith(expect.any(Error));
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onComplete).toHaveBeenCalledOnce();
+    expect(model.phase).toBe(AdPhase.Error);
+    vi.advanceTimersByTime(10_000);
+    expect(onComplete).toHaveBeenCalledOnce();
+    consoleError.mockRestore();
+  });
+
+  it('clears the watchdog on completion, error, and destroy', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    model.requestAd();
+    expect(vi.getTimerCount()).toBe(1);
+    loader.emit('manager-loaded', { getAdsManager: () => manager });
+    manager.emit('complete');
+    expect(vi.getTimerCount()).toBe(0);
+
+    model.requestAd();
+    expect(vi.getTimerCount()).toBe(1);
+    loader.emit('ad-error', { getError: () => new Error('ad failed') });
+    expect(vi.getTimerCount()).toBe(0);
+
+    model.requestAd();
+    expect(vi.getTimerCount()).toBe(1);
+    model.destroy();
+    expect(vi.getTimerCount()).toBe(0);
+    consoleError.mockRestore();
+  });
+
+  it('treats an unattributable loader error as the current request error', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    model.requestAd();
+    loader.listeners.get('ad-error')?.({ getError: () => new Error('unattributable failure') });
+
+    expect(consoleError).toHaveBeenCalledWith(expect.any(Error));
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onComplete).toHaveBeenCalledOnce();
+    expect(model.phase).toBe(AdPhase.Error);
+    consoleError.mockRestore();
+  });
+
+  it('destroys the manager before invoking completion', () => {
+    model.requestAd();
+    loader.emit('manager-loaded', { getAdsManager: () => manager });
+    manager.destroy.mockImplementationOnce(() => {
+      expect(onComplete).not.toHaveBeenCalled();
+    });
+
+    manager.emit('complete');
+
+    expect(manager.destroy).toHaveBeenCalledOnce();
+    expect(onComplete).toHaveBeenCalledOnce();
+  });
 
   it('reports an ad error and completes so the game can continue', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});

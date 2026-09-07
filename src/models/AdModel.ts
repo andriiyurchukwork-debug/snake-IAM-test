@@ -72,6 +72,7 @@ export class AdModel {
   private readonly initializationError: unknown;
   private runGeneration = 0;
   private activeRequestContext: object | null = null;
+  private watchdogId: ReturnType<typeof setTimeout> | null = null;
   private _phase = AdPhase.Idle;
 
   onComplete: () => void = () => {};
@@ -107,11 +108,15 @@ export class AdModel {
     }
 
     this.retireManager();
+    this.clearWatchdog();
     const generation = ++this.runGeneration;
     const requestContext = { generation };
     this.activeRequestContext = requestContext;
     this.completed = false;
     this._phase = AdPhase.Loading;
+    this.watchdogId = setTimeout(() => {
+      this.handleError(new Error('IMA ad request timed out'), generation);
+    }, 10_000);
     this.initialize(generation);
 
     try {
@@ -136,6 +141,7 @@ export class AdModel {
     this.destroyed = true;
     this.runGeneration++;
     this.activeRequestContext = null;
+    this.clearWatchdog();
     this.retireManager();
     const loader = this.loader;
     this.loader = null;
@@ -165,7 +171,8 @@ export class AdModel {
         (event) => this.handleManagerLoaded(event),
       );
       this.loader.addEventListener(this.ima.AdErrorEvent.Type.AD_ERROR, (event) => {
-        this.handleError(event, this.getEventGeneration(event));
+        const eventGeneration = this.getEventGeneration(event);
+        this.handleError(event, eventGeneration === -1 ? -1 : this.runGeneration);
       });
     } catch (error) {
       this.handleError(error, generation);
@@ -200,6 +207,8 @@ export class AdModel {
     if (this.completed || this.destroyed || generation !== this.runGeneration) return;
     this.completed = true;
     this._phase = AdPhase.Complete;
+    this.clearWatchdog();
+    this.retireManager();
     try {
       this.onComplete();
     } catch {
@@ -211,6 +220,8 @@ export class AdModel {
     if (this.completed || this.destroyed || generation !== this.runGeneration) return;
     this.completed = true;
     this._phase = AdPhase.Error;
+    this.clearWatchdog();
+    this.retireManager();
     let error = event;
     try {
       if (
@@ -237,23 +248,31 @@ export class AdModel {
     }
   }
 
-  private getEventGeneration(event: unknown): number {
+  private getEventGeneration(event: unknown): number | null {
     if (
       typeof event !== 'object' ||
       event === null ||
       !('getUserRequestContext' in event) ||
       typeof event.getUserRequestContext !== 'function'
     ) {
-      return -1;
+      return null;
     }
 
     try {
       const context = event.getUserRequestContext();
-      return context === this.activeRequestContext && context !== null
+      if (context === null || context === undefined) return null;
+      return context === this.activeRequestContext
         ? (context as { generation: number }).generation
         : -1;
     } catch {
-      return -1;
+      return null;
+    }
+  }
+
+  private clearWatchdog(): void {
+    if (this.watchdogId !== null) {
+      clearTimeout(this.watchdogId);
+      this.watchdogId = null;
     }
   }
 
