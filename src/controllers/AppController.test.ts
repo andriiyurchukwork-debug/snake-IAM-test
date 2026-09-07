@@ -175,7 +175,46 @@ describe('AppController', () => {
     expect(gameView.render).toHaveBeenLastCalledWith(
       expect.objectContaining({ score: 0, snake: expect.any(Array) }),
     );
-    expect(focusGame).toHaveBeenCalledTimes(2);
+    expect(focusGame).toHaveBeenCalledTimes(3);
+  });
+
+  it('restores focus in a deferred task after replay pre-roll completion', () => {
+    vi.spyOn(SnakeGameModel.prototype, 'tick').mockImplementation(() => {});
+    vi.spyOn(SnakeGameModel.prototype, 'isGameOver', 'get').mockReturnValue(true);
+    controller = new AppController(gameView, promptView, redirect, adView, adModel, focusGame);
+
+    controller.start();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    adModel.onComplete();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    vi.advanceTimersByTime(TICK_MS);
+    adModel.onComplete();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    adModel.onComplete();
+
+    expect(controller.getState()).toBe(AppState.Playing);
+    expect(focusGame).toHaveBeenCalledTimes(3);
+
+    vi.runOnlyPendingTimers();
+
+    expect(focusGame).toHaveBeenCalledTimes(4);
+  });
+
+  it('cancels deferred focus when destroyed', () => {
+    controller = new AppController(gameView, promptView, redirect, adView, adModel, focusGame);
+
+    controller.start();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    adModel.onComplete();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+    expect(focusGame).toHaveBeenCalledOnce();
+
+    controller.destroy();
+    controller = undefined;
+    vi.runOnlyPendingTimers();
+
+    expect(focusGame).toHaveBeenCalledOnce();
   });
 
   it('redirects when Escape is pressed on the replay prompt', () => {

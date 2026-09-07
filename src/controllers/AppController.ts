@@ -35,6 +35,7 @@ export class AppController {
   private readonly game = new SnakeGameModel();
   private readonly input: InputController;
   private tickId: number | null = null;
+  private focusTimerId: number | null = null;
   private adGeneration = 0;
   private preRollCompleted = false;
   private preRollContext: PreRollContext = 'initial';
@@ -68,6 +69,7 @@ export class AppController {
 
   destroy(): void {
     this.stopLoop();
+    this.clearFocusTimer();
     this.input.destroy();
     this.adGeneration++;
     this.adModel.destroy();
@@ -97,6 +99,7 @@ export class AppController {
         this.gameView.show();
         this.gameView.render(this.game.getSnapshot());
         this.focusGameSafely();
+        this.deferFocusGame();
         this.startLoop();
         break;
       case AppState.GameOver:
@@ -194,6 +197,23 @@ export class AppController {
       this.focusGame();
     } catch {
       // Focus is a best-effort enhancement and must not interrupt game startup.
+    }
+  }
+
+  private deferFocusGame(): void {
+    this.clearFocusTimer();
+    this.focusTimerId = window.setTimeout(() => {
+      this.focusTimerId = null;
+      if (this.state === AppState.Playing) {
+        this.focusGameSafely();
+      }
+    }, 0);
+  }
+
+  private clearFocusTimer(): void {
+    if (this.focusTimerId !== null) {
+      window.clearTimeout(this.focusTimerId);
+      this.focusTimerId = null;
     }
   }
 }
