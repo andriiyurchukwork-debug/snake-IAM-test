@@ -21,6 +21,7 @@ describe('AppController', () => {
     onError: (error: unknown) => void;
     destroy: ReturnType<typeof vi.fn>;
   };
+  let focusGame: ReturnType<typeof vi.fn>;
   let redirect: ReturnType<typeof vi.fn>;
   let controller: AppController | undefined;
 
@@ -30,6 +31,7 @@ describe('AppController', () => {
     promptView = { show: vi.fn(), hide: vi.fn() };
     adView = { show: vi.fn(), hide: vi.fn(), destroy: vi.fn() };
     adModel = { requestAd: vi.fn(), onComplete: () => {}, onError: () => {}, destroy: vi.fn() };
+    focusGame = vi.fn();
     redirect = vi.fn();
   });
 
@@ -84,7 +86,7 @@ describe('AppController', () => {
   });
 
   it('confirms play, resets the model, and renders the initial board', () => {
-    controller = new AppController(gameView, promptView, redirect, adView, adModel);
+    controller = new AppController(gameView, promptView, redirect, adView, adModel, focusGame);
 
     controller.start();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
@@ -99,6 +101,7 @@ describe('AppController', () => {
     expect(gameView.render).toHaveBeenCalledWith(
       expect.objectContaining({ score: 0, snake: expect.any(Array) }),
     );
+    expect(focusGame).toHaveBeenCalledOnce();
   });
 
   it('routes arrow keys to the game while playing', () => {
@@ -144,7 +147,7 @@ describe('AppController', () => {
     vi.spyOn(SnakeGameModel.prototype, 'tick').mockImplementation(() => {});
     vi.spyOn(SnakeGameModel.prototype, 'isGameOver', 'get').mockReturnValue(true);
 
-    controller = new AppController(gameView, promptView, redirect, adView, adModel);
+    controller = new AppController(gameView, promptView, redirect, adView, adModel, focusGame);
     controller.start();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     adModel.onComplete();
@@ -172,6 +175,7 @@ describe('AppController', () => {
     expect(gameView.render).toHaveBeenLastCalledWith(
       expect.objectContaining({ score: 0, snake: expect.any(Array) }),
     );
+    expect(focusGame).toHaveBeenCalledTimes(2);
   });
 
   it('redirects when Escape is pressed on the replay prompt', () => {

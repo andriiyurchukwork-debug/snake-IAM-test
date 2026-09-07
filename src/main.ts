@@ -5,6 +5,7 @@ import { AdView } from './views/AdView';
 import { AdModel } from './models/AdModel';
 
 const canvas = document.getElementById('game-canvas');
+const appContainer = document.getElementById('app');
 const overlay = document.getElementById('prompt-overlay');
 const promptText = document.getElementById('prompt-text');
 const adContainer = document.getElementById('ad-container');
@@ -12,6 +13,7 @@ const adVideo = document.getElementById('ad-video');
 
 if (
   !(canvas instanceof HTMLCanvasElement) ||
+  !appContainer ||
   !overlay ||
   !promptText ||
   !adContainer ||
@@ -27,6 +29,7 @@ const app = new AppController(
   undefined,
   adView,
   new AdModel(adView.getContainer(), adView.getVideo()),
+  () => appContainer.focus(),
 );
 
 app.start();

@@ -20,6 +20,7 @@ A small browser-based Snake game used to demonstrate a fixed-size Canvas 2D game
 | `Escape` | Decline either prompt and redirect to the configured URL |
 
 Arrow keys are handled only during `PLAYING`. `Enter` and `Escape` are handled only during the initial and replay prompts. Opposite-direction turns are rejected by the game model.
+When gameplay starts, the app container receives focus so keyboard controls continue working after an ad is skipped or completed.
 
 ## Application flow
 

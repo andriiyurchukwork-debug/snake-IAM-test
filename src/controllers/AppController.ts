@@ -47,6 +47,7 @@ export class AppController {
     },
     private readonly adView: AdViewPort = NOOP_AD_VIEW,
     private readonly adModel: AdModelPort = createNoopAdModel(),
+    private readonly focusGame: () => void = () => {},
   ) {
     this.input = new InputController(() => this.state, {
       onDirection: (direction: Direction) => this.game.setDirection(direction),
@@ -95,6 +96,7 @@ export class AppController {
         this.game.reset();
         this.gameView.show();
         this.gameView.render(this.game.getSnapshot());
+        this.focusGameSafely();
         this.startLoop();
         break;
       case AppState.GameOver:
@@ -184,6 +186,14 @@ export class AppController {
     if (this.tickId !== null) {
       window.clearInterval(this.tickId);
       this.tickId = null;
+    }
+  }
+
+  private focusGameSafely(): void {
+    try {
+      this.focusGame();
+    } catch {
+      // Focus is a best-effort enhancement and must not interrupt game startup.
     }
   }
 }
