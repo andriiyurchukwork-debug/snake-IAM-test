@@ -171,10 +171,7 @@ export class AppController {
       this.transition(nextState);
     };
     this.adModel.onComplete = finishAd;
-    this.adModel.onError = (error) => {
-      console.error(error);
-      finishAd();
-    };
+    this.adModel.onError = () => finishAd();
     try {
       this.adModel.requestAd();
     } catch (error) {

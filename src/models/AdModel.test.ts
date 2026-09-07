@@ -43,6 +43,8 @@ class MockRequest {
   adTagUrl = '';
   linearAdSlotWidth = 0;
   linearAdSlotHeight = 0;
+  setAdWillAutoPlay = vi.fn();
+  setAdWillPlayMuted = vi.fn();
 }
 
 class MockManager {
@@ -124,6 +126,8 @@ describe('AdModel', () => {
       linearAdSlotWidth: AD_WIDTH,
       linearAdSlotHeight: AD_HEIGHT,
     });
+    expect(loader.requestAds.mock.calls[0][0].setAdWillAutoPlay).toHaveBeenCalledWith(true);
+    expect(loader.requestAds.mock.calls[0][0].setAdWillPlayMuted).toHaveBeenCalledWith(false);
     expect(model.phase).toBe(AdPhase.Loading);
   });
 

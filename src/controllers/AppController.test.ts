@@ -208,7 +208,7 @@ describe('AppController', () => {
   });
 
   it('advances from an ad error through the error fallback', () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     controller = new AppController(gameView, promptView, redirect, adView, adModel);
 
     controller.start();
@@ -216,6 +216,7 @@ describe('AppController', () => {
     adModel.onError(new Error('ad failed'));
 
     expect(controller.getState()).toBe(AppState.PromptPlay);
+    expect(consoleError).not.toHaveBeenCalled();
   });
 
   it('auto-completes when constructed without ad dependencies', async () => {

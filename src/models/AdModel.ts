@@ -24,6 +24,8 @@ interface ImaAdsRequest {
   adTagUrl: string;
   linearAdSlotWidth: number;
   linearAdSlotHeight: number;
+  setAdWillAutoPlay(willAutoPlay: boolean): void;
+  setAdWillPlayMuted(willPlayMuted: boolean): void;
 }
 
 interface ImaAdsManager {
@@ -130,6 +132,8 @@ export class AdModel {
       request.adTagUrl = AD_TAG_URL;
       request.linearAdSlotWidth = AD_WIDTH;
       request.linearAdSlotHeight = AD_HEIGHT;
+      request.setAdWillAutoPlay(true);
+      request.setAdWillPlayMuted(false);
       this.loader?.requestAds(request, requestContext);
     } catch (error) {
       this.handleError(error, generation);

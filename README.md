@@ -81,7 +81,7 @@ The project keeps game rules, orchestration, input, and rendering separate:
 - `src/config/gameConfig.ts` — Canvas dimensions, cell dimensions, grid dimensions, and tick interval.
 - `src/config/adConfig.ts` — IMA test VAST URL and ad slot dimensions.
 - `src/config/appConfig.ts` — Redirect destination.
-- `src/types/AppState.ts`, `src/types/Direction.ts`, `src/types/ima.d.ts` — Application states, movement directions, and TypeScript declarations for the global IMA SDK.
+- `src/types/AppState.ts`, `src/types/Direction.ts` — Application states and movement directions.
 - `index.html` — Fixed app shell, prompt/ad DOM elements, inline layout styles, and the external IMA SDK script.
 
 ## Local development
