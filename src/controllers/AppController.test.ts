@@ -89,6 +89,8 @@ describe('AppController', () => {
     controller.start();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     adModel.onComplete();
+    expect(controller.getState()).toBe(AppState.PromptPlay);
+    expect(promptView.show).toHaveBeenLastCalledWith('Do you want to play?');
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }));
 
     expect(controller.getState()).toBe(AppState.Playing);
@@ -137,7 +139,7 @@ describe('AppController', () => {
     expect(gameView.render).toHaveBeenCalledTimes(renderCount);
   });
 
-  it('confirms replay, resets the model, and starts a fresh game', () => {
+  it('confirms replay, runs one pre-roll, and starts directly without a second prompt', () => {
     const reset = vi.spyOn(SnakeGameModel.prototype, 'reset');
     vi.spyOn(SnakeGameModel.prototype, 'tick').mockImplementation(() => {});
     vi.spyOn(SnakeGameModel.prototype, 'isGameOver', 'get').mockReturnValue(true);
@@ -153,6 +155,7 @@ describe('AppController', () => {
     adModel.onComplete();
     expect(controller.getState()).toBe(AppState.PromptReplay);
     const resetCountBeforeReplay = reset.mock.calls.length;
+    const promptCountBeforeReplay = promptView.show.mock.calls.length;
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
@@ -160,9 +163,9 @@ describe('AppController', () => {
     expect(adModel.requestAd).toHaveBeenCalledTimes(3);
     adModel.onComplete();
 
-    expect(controller.getState()).toBe(AppState.PromptPlay);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     expect(controller.getState()).toBe(AppState.Playing);
+    expect(adModel.requestAd).toHaveBeenCalledTimes(3);
+    expect(promptView.show).toHaveBeenCalledTimes(promptCountBeforeReplay);
     expect(reset).toHaveBeenCalledTimes(resetCountBeforeReplay + 1);
     expect(promptView.hide).toHaveBeenCalled();
     expect(gameView.show).toHaveBeenCalled();

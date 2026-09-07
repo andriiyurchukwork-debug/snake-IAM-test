@@ -16,6 +16,7 @@ type AdModelPort = Pick<AdModel, 'requestAd' | 'destroy'> & {
   onComplete: () => void;
   onError: (error: unknown) => void;
 };
+type PreRollContext = 'initial' | 'replay';
 
 const NOOP_AD_VIEW: AdViewPort = { show: () => {}, hide: () => {} };
 
@@ -36,6 +37,7 @@ export class AppController {
   private tickId: number | null = null;
   private adGeneration = 0;
   private preRollCompleted = false;
+  private preRollContext: PreRollContext = 'initial';
 
   constructor(
     private readonly gameView: GameViewPort,
@@ -71,7 +73,10 @@ export class AppController {
     this.adView.destroy?.();
   }
 
-  private transition(next: AppState): void {
+  private transition(next: AppState, context?: { preRollContext?: PreRollContext }): void {
+    if (next === AppState.PreRollAd && context?.preRollContext) {
+      this.preRollContext = context.preRollContext;
+    }
     this.state = next;
 
     switch (next) {
@@ -120,7 +125,7 @@ export class AppController {
       this.transition(this.preRollCompleted ? AppState.Playing : AppState.PreRollAd);
     } else if (this.state === AppState.PromptReplay) {
       this.preRollCompleted = false;
-      this.transition(AppState.PreRollAd);
+      this.transition(AppState.PreRollAd, { preRollContext: 'replay' });
     }
   }
 
@@ -157,9 +162,13 @@ export class AppController {
       if (this.state === AppState.PreRollAd) {
         this.preRollCompleted = true;
       }
-      this.transition(
-        this.state === AppState.PreRollAd ? AppState.PromptPlay : AppState.PromptReplay,
-      );
+      const nextState =
+        this.state !== AppState.PreRollAd
+          ? AppState.PromptReplay
+          : this.preRollContext === 'replay'
+            ? AppState.Playing
+            : AppState.PromptPlay;
+      this.transition(nextState);
     };
     this.adModel.onComplete = finishAd;
     this.adModel.onError = (error) => {
