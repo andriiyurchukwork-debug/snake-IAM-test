@@ -89,14 +89,17 @@ export class SnakeGameModel {
       return;
     }
 
-    if (this.snake.some((segment, index) => index > 0 && segment.x === newHead.x && segment.y === newHead.y)) {
+    const isEating = newHead.x === this.food.x && newHead.y === this.food.y;
+    const bodyToCheck = isEating ? this.snake : this.snake.slice(0, -1);
+
+    if (bodyToCheck.some((segment) => segment.x === newHead.x && segment.y === newHead.y)) {
       this._isGameOver = true;
       return;
     }
 
     this.snake.unshift(newHead);
 
-    if (newHead.x === this.food.x && newHead.y === this.food.y) {
+    if (isEating) {
       this._score += 1;
       this.spawnFood();
       return;

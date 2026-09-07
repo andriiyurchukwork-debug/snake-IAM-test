@@ -47,9 +47,47 @@ describe('SnakeGameModel', () => {
       { x: 5, y: 11 },
       { x: 6, y: 11 },
       { x: 6, y: 10 },
+      { x: 6, y: 9 },
     ]);
     game.tick();
     expect(game.isGameOver).toBe(true);
+  });
+
+  it('allows moving into the departing tail cell and continues', () => {
+    game.setBody([
+      { x: 4, y: 10 },
+      { x: 4, y: 11 },
+      { x: 5, y: 11 },
+      { x: 5, y: 10 },
+    ]);
+    game.tick();
+
+    expect(game.isGameOver).toBe(false);
+    expect(game.getSnapshot().snake).toEqual([
+      { x: 5, y: 10 },
+      { x: 4, y: 10 },
+      { x: 4, y: 11 },
+      { x: 5, y: 11 },
+    ]);
+  });
+
+  it('ends game when moving into the tail cell while eating food', () => {
+    game.setBody([
+      { x: 4, y: 10 },
+      { x: 4, y: 11 },
+      { x: 5, y: 11 },
+      { x: 5, y: 10 },
+    ]);
+    game.placeFoodAt({ x: 5, y: 10 });
+    game.tick();
+
+    expect(game.isGameOver).toBe(true);
+    expect(game.getSnapshot().snake).toEqual([
+      { x: 4, y: 10 },
+      { x: 4, y: 11 },
+      { x: 5, y: 11 },
+      { x: 5, y: 10 },
+    ]);
   });
 
   it('cannot reverse direction', () => {
