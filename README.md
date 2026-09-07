@@ -35,13 +35,12 @@ BOOT
   → POST_ROLL_AD
   → PROMPT_REPLAY
   → PRE_ROLL_AD       (Enter; replay)
-  → PROMPT_PLAY
-  → PLAYING           (Enter)
+  → PLAYING
 ```
 
 At startup, the game shows `Do you want to play?` and does not request an ad. The first `Enter` starts the pre-roll request; the game prompt is shown again after the ad completes, so a second `Enter` starts a fresh game. This request is initiated from the keyboard action so the pre-roll display initialization occurs in a user-gesture-gated flow.
 
-The game advances every 120 ms. A wall or self collision ends the run, stops the loop, and starts the post-roll ad. When that ad completes—or when an ad error triggers the fallback—the game shows `Do you want to play again?`. Confirming replay requests another pre-roll, then returns to the play prompt before resetting and starting the next run. Pressing `Escape` from either prompt transitions to `REDIRECT` and navigates to `https://www.google.com`, the URL currently configured in `src/config/appConfig.ts`.
+The game advances every 120 ms. A wall or self collision ends the run, stops the loop, and starts the post-roll ad. When that ad completes—or when an ad error triggers the fallback—the game shows `Do you want to play again?`. Confirming replay requests another pre-roll, then starts the next run directly in `PLAYING` after the ad completes. Pressing `Escape` from either prompt transitions to `REDIRECT` and navigates to `https://www.google.com`, the URL currently configured in `src/config/appConfig.ts`.
 
 ## IMA SDK and fallback behavior
 

@@ -290,11 +290,15 @@ describe('AdModel', () => {
     consoleError.mockRestore();
   });
 
-  it('clears the watchdog on completion, error, and destroy', () => {
+  it('clears the watchdog when playback starts, on error, and on destroy', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     model.requestAd();
     expect(vi.getTimerCount()).toBe(1);
     loader.emit('manager-loaded', { getAdsManager: () => manager });
+    expect(vi.getTimerCount()).toBe(0);
+    vi.advanceTimersByTime(10_000);
+    expect(onError).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
     manager.emit('complete');
     expect(vi.getTimerCount()).toBe(0);
 

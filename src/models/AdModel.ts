@@ -1,5 +1,7 @@
 import { AD_HEIGHT, AD_TAG_URL, AD_WIDTH } from '../config/adConfig';
 
+const AD_LOAD_WATCHDOG_MS = 10_000;
+
 export enum AdPhase {
   Idle = 'IDLE',
   Loading = 'LOADING',
@@ -118,7 +120,7 @@ export class AdModel {
     this._phase = AdPhase.Loading;
     this.watchdogId = setTimeout(() => {
       this.handleError(new Error('IMA ad request timed out'), generation);
-    }, 10_000);
+    }, AD_LOAD_WATCHDOG_MS);
     this.initialize(generation);
 
     try {
@@ -199,9 +201,10 @@ export class AdModel {
       this.manager.addEventListener(this.ima.AdErrorEvent.Type.AD_ERROR, (error) => {
         this.handleError(error, generation);
       });
-      this._phase = AdPhase.Playing;
       this.manager.init(AD_WIDTH, AD_HEIGHT, this.ima.ViewMode.NORMAL);
       this.manager.start();
+      this.clearWatchdog();
+      this._phase = AdPhase.Playing;
     } catch (error) {
       this.handleError(error, generation);
     }
